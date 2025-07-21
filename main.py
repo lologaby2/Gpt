@@ -1,12 +1,11 @@
 import os
-import time
 import telebot
+from flask import Flask, request
 
-# التوكن الخاص بك
 BOT_TOKEN = "7999893111:AAGe_NUHgeelBTXK496jrHeug11vsiWQDKk"
 bot = telebot.TeleBot(BOT_TOKEN)
+app = Flask(__name__)
 
-# النص العلوي والسفلي حسب ما زودتني
 TEXT_TOP = """قم بترجمة النص للعربي بما يلائم فيديو شورت مدته (    ) ثانية و حافظ على تدفق النص بسلاسة،قم باستبدال اسماء الاشخاص ان وجدت
 ب(الرجل،المرأة،الفتاة،الطفل،الشاب......) و
 هكذا،ساستخدم هذا النص لتوليد صوت بالذكاء
@@ -21,9 +20,12 @@ def handle_message(message):
     user_text = message.text
     reply = f"{TEXT_TOP}\n\n{user_text}\n\n{TEXT_BOTTOM}"
     bot.send_message(message.chat.id, reply)
-    print("✅ تم تنفيذ المهمة. سيتم إيقاف البوت الآن.")
-    time.sleep(1)
-    os._exit(0)
 
-print("🚀 البوت يعمل الآن وينتظر الرسائل...")
-bot.polling()
+@app.route(f"/{BOT_TOKEN}", methods=["POST"])
+def webhook():
+    update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
+    bot.process_new_updates([update])
+    return "OK", 200
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
